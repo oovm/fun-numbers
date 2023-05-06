@@ -17,8 +17,8 @@ serde = "1.0.152"
 serde_derive = "1.0.152"
 
 [dependencies.latexify]
-#version = "0.0.0"
-path = "../latexify"
+version = "0.0.0"
+#path = "../latexify"
 
 [dev-dependencies]
 

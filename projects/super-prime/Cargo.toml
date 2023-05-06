@@ -1,5 +1,5 @@
 [package]
-name = "make-up-number"
+name = "super-prime"
 version = "0.0.0"
 authors = ["Aster <192607617@qq.com>"]
 description = "..."
@@ -10,14 +10,7 @@ license = "MPL-2.0"
 edition = "2021"
 
 [dependencies]
-dashu = { version = "0.3.1", features = ["serde"] }
-itertools = "0.10.5"
-gen-iter = "0.3.0"
-serde = "1.0.152"
-serde_derive = "1.0.152"
-ahash = "0.8.3"
-dashmap = "5.4.0"
-catalan = "0.3.3"
+num = "0.4.0"
 
 [dependencies.latexify]
 version = "0.0.1"
