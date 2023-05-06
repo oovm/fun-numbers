@@ -1,56 +1,59 @@
-use num::bigint::BigInt;
-use num::traits::{Zero, One};
+#![feature(iter_from_generator)]
+#![feature(generators)]
 
-fn is_prime(n: &BigInt) -> bool {
-    if n <= &BigInt::one() {
-        return false;
-    }
+use std::collections::VecDeque;
+use std::iter::from_generator;
+use std::ops::{Div, Mul, Rem};
+use num_primes::{Verification, BigUint};
 
-    for i in 2..=n.sqrt() {
-        if n % i == BigInt::zero() {
-            return false;
+
+/// insert 0-9 to n at given position
+pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl Iterator<Item=BigUint> + '_ {
+    let start_index = if contains_zero {
+        0
+    } else {
+        1
+    };
+    from_generator(move || {
+        for i in start_index..=9 {
+            let pow = 10usize.pow(position as u32);
+            let lhs = n.div(&pow);
+            let rhs = n.rem(&pow);
+            let new = lhs.mul(&pow * 10) + i.mul(&pow) + rhs;
+            if Verification::is_prime(&new) {
+                yield new;
+            }
         }
-    }
-
-    true
+    })
 }
 
-fn find_sequences(start: &BigInt, max_len: usize) -> Vec<Vec<u32>> {
-    let mut seqs = Vec::new();
-    let mut queue = Vec::new();
-    queue.push(vec![start.clone()]);
-
-    while !queue.is_empty() {
-        let seq = queue.remove(0);
-        let last_digit = seq.last().unwrap().clone();
-        if seq.len() > max_len {
-            break;
-        }
-
-        for digit in 0..=9 {
-            let mut new_seq = seq.clone();
-            new_seq.push(last_digit * 10 + digit);
-            if is_prime(&new_seq.last().unwrap()) {
-                queue.push(new_seq.clone());
-                if new_seq.len() > seqs.len() {
-                    seqs.clear();
-                    seqs.push(new_seq.iter().map(|n| n.to_u32().unwrap()).collect());
-                } else if new_seq.len() == seqs.len() {
-                    seqs.push(new_seq.iter().map(|n| n.to_u32().unwrap()).collect());
+/// find a sequence, starting from a decimal one-digit prime number, insert a number at any position, it is still a prime number
+/// eg, 1 -> 13 -> 137 -> 1373 -> ...
+pub fn find_dfs(start: &BigUint, max_length: usize) -> VecDeque<BigUint> {
+    let start_len = start.to_string().len();
+    assert!(start_len < max_length, "length of {} is larger than {}", start, max_length);
+    // dfs search, return first stack reached max length
+    let mut stack = VecDeque::new();
+    stack.push_back(start.clone());
+    'outer: while let Some(n) = stack.pop_back() {
+        let old_len = n.to_string().len();
+        for i in 0..old_len {
+            for new in insert_digit(&n, i, i != old_len) {
+                let new_len = old_len + 1;
+                stack.push_back(new.clone());
+                if new_len == max_length {
+                    break 'outer;
                 }
             }
         }
     }
-
-    seqs
+    stack
 }
 
-fn main() {
-    let start = BigInt::from(2);
-    let max_len = 10;
-
-    let sequences = find_sequences(&start, max_len);
-    for seq in sequences {
-        println!("{:?}", seq);
+#[test]
+fn test() {
+    let start = BigUint::from(13usize);
+    for n in find_dfs(&start, 20) {
+        println!("{}", n);
     }
 }
