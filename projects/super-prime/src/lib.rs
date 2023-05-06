@@ -4,6 +4,7 @@
 use std::collections::VecDeque;
 use std::iter::from_generator;
 use std::ops::{Div, Mul, Rem};
+use std::str::FromStr;
 use num_primes::{Verification, BigUint};
 
 
@@ -29,31 +30,35 @@ pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl I
 
 /// find a sequence, starting from a decimal one-digit prime number, insert a number at any position, it is still a prime number
 /// eg, 1 -> 13 -> 137 -> 1373 -> ...
-pub fn find_dfs(start: &BigUint, max_length: usize) -> VecDeque<BigUint> {
+pub fn find_dfs(start: &BigUint, max_length: usize) -> Vec<BigUint> {
     let start_len = start.to_string().len();
-    assert!(start_len < max_length, "length of {} is larger than {}", start, max_length);
+    assert!(start_len < max_length, "start number {} must be less than max length {}", start, max_length);
     // dfs search, return first stack reached max length
+    let seq = vec![start.clone()];
     let mut stack = VecDeque::new();
-    stack.push_back(start.clone());
-    'outer: while let Some(n) = stack.pop_back() {
-        let old_len = n.to_string().len();
-        for i in 0..old_len {
-            for new in insert_digit(&n, i, i != old_len) {
+    stack.push_back(seq);
+    'outer: while let Some(old_seq) = stack.pop_back() {
+        let old_len = old_seq.len() + start_len - 1;
+        let last = old_seq.last().unwrap();
+        for i in 0..old_seq.len() {
+            for number in insert_digit(last, i, i != old_len) {
+                let mut new_seq = old_seq.clone();
+                new_seq.push(number.clone());
+                stack.push_back(new_seq);
                 let new_len = old_len + 1;
-                stack.push_back(new.clone());
                 if new_len == max_length {
                     break 'outer;
                 }
             }
         }
     }
-    stack
+    stack.pop_back().unwrap()
 }
 
 #[test]
 fn test() {
-    let start = BigUint::from(13usize);
-    for n in find_dfs(&start, 20) {
+    let start = BigUint::from_str("1391597082670536199999").unwrap();
+    for n in find_dfs(&start, 2) {
         println!("{}", n);
     }
 }
