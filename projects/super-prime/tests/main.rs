@@ -21,7 +21,7 @@ fn test2() {
 
 #[test]
 fn test() -> std::io::Result<()> {
-    const LIMIT: usize = 100;
+    const LIMIT: usize = 200 - 1;
     let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").canonicalize()?;
     let mut prime2 = File::create(here.join("prime2.py"))?;
     let mut prime3 = File::create(here.join("prime3.py"))?;
