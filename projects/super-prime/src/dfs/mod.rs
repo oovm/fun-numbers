@@ -1,3 +1,4 @@
+use crate::SuperPrimeRecord;
 use num::BigUint;
 use num_prime::nt_funcs::is_prime;
 use std::{
@@ -53,29 +54,37 @@ pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl I
 /// ```
 /// # use super_prime::{BigUint, super_prime};
 /// let start = BigUint::from(2usize);
-/// for n in super_prime(&start, 100).into_iter().rev() {
+/// for n in super_prime(&start).into_iter().rev() {
 ///     println!("{}", n);
 /// }
 /// ```
-pub fn super_prime(start: &BigUint, iteration: usize) -> Vec<BigUint> {
+pub fn super_prime(start: &BigUint) -> impl Iterator<Item = SuperPrimeRecord> {
+    let start_time = std::time::Instant::now();
+    let mut old_len = start.to_string().len();
     let seq = vec![start.clone()];
     let mut stack = VecDeque::new();
     stack.push_back(seq);
     // dfs search, return first stack reached max length
-    'outer: while let Some(old_seq) = stack.pop_back() {
-        let last = unsafe { old_seq.last().unwrap_unchecked() };
-        let old_len = last.to_string().len();
-        for i in 0..old_len {
-            for number in insert_digit(last, i, i != old_len) {
-                let mut new_seq = old_seq.clone();
-                new_seq.push(number.clone());
-                stack.push_back(new_seq);
-                if old_len == iteration {
-                    break 'outer;
+    from_generator(move || {
+        while let Some(old_seq) = stack.pop_back() {
+            let last = unsafe { old_seq.last().unwrap_unchecked() };
+            let new_len = last.to_string().len();
+            for i in 0..old_len {
+                for number in insert_digit(last, i, i != old_len) {
+                    let mut new_seq = old_seq.clone();
+                    new_seq.push(number.clone());
+                    stack.push_back(new_seq);
                 }
             }
+            if new_len > old_len {
+                yield SuperPrimeRecord {
+                    numbers: old_seq,
+                    digits: old_len,
+                    rest: stack.len(),
+                    time: start_time.elapsed().as_secs_f64(),
+                };
+                old_len = new_len;
+            }
         }
-    }
-    // nil means no such sequence
-    stack.pop_back().unwrap_or_default()
+    })
 }

@@ -10,3 +10,16 @@ mod dfs;
 pub use crate::dfs::{insert_digit, super_prime};
 pub use num::BigUint;
 pub use num_prime::{nt_funcs::is_prime, PrimalityTestConfig};
+
+/// A super prime record
+#[derive(Debug, Clone)]
+pub struct SuperPrimeRecord {
+    /// The super prime number
+    pub numbers: Vec<BigUint>,
+    /// The number of digits of the super prime number
+    pub digits: usize,
+    /// The number of digits of the super prime number
+    pub rest: usize,
+    /// The time spent on finding the super prime number
+    pub time: f64,
+}
