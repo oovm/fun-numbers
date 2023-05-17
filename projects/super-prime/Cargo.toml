@@ -1,19 +1,17 @@
 [package]
 name = "super-prime"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["Aster <192607617@qq.com>"]
-description = "..."
-repository = "https://github.com/oovm/sub_projects"
-documentation = "https://docs.rs/anomalous-cancellation"
+description = "Find the super prime number."
+repository = "https://github.com/oovm/fun-numbers/tree/dev/projects/super-prime"
+documentation = "https://docs.rs/super-prime"
 readme = "Readme.md"
 license = "MPL-2.0"
 edition = "2021"
 
 [dependencies]
-latexify = "0.0.1"
-num-primes = "0.3.0"
-num-traits = "0.2.15"
-#num = "0.4.0"
+num-prime = "0.4.3"
+num = "0.4.0"
 
 [dev-dependencies]
 

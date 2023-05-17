@@ -8,5 +8,5 @@
 mod dfs;
 
 pub use crate::dfs::{insert_digit, super_prime};
-pub use num_primes::BigUint;
-pub use num_primes::Verification;
+pub use num::BigUint;
+pub use num_prime::{nt_funcs::is_prime, PrimalityTestConfig};

@@ -1,25 +1,39 @@
-use std::collections::VecDeque;
-use std::iter::from_generator;
-use std::ops::{Div, Mul, Rem};
-use num_primes::{Verification, BigUint};
-use num_traits::Pow;
+use num::BigUint;
+use num_prime::nt_funcs::is_prime;
+use std::{
+    collections::VecDeque,
+    iter::from_generator,
+    ops::{Div, Mul, Rem},
+};
 
-
-/// insert 0-9 to n at given position
-pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl Iterator<Item=BigUint> + '_ {
-    let start_index: u8 = if contains_zero {
-        0
-    } else {
-        1
-    };
-    let pow = BigUint::from(10usize).pow(position);
+/// Insert 0-9 to number at given position
+///
+/// # Examples
+///
+/// ```
+/// # use super_prime::{insert_digit, BigUint};
+/// let start = BigUint::from(13usize);
+/// for n in insert_digit(&start, 0, true) {
+///     println!("{}", n); // 131, 137, 139
+/// }
+/// for n in insert_digit(&start, 1, true) {
+///     println!("{}", n); // 103, 113, 167, 173, 193
+/// }
+/// for n in insert_digit(&start, 2, false) {
+///     println!("{}", n); // 113, 313, 613
+/// }
+/// ```
+pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl Iterator<Item = BigUint> + '_ {
+    debug_assert!(position <= n.to_string().len(), "position {} of {} is out of range", position, n);
+    let start_index: u8 = if contains_zero { 0 } else { 1 };
+    let pow = BigUint::from(10usize).pow(position as u32);
     let lhs = n.div(&pow).mul(&pow).mul(10usize);
     let rhs = n.rem(&pow);
     from_generator(move || {
         for i in start_index..=9 {
             let digit = BigUint::from(i).mul(&pow);
             let new = digit + &lhs + &rhs;
-            if Verification::is_prime(&new) {
+            if is_prime(&new, None).probably() {
                 yield new;
             }
         }
@@ -38,10 +52,10 @@ pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl I
 ///
 /// ```
 /// # use super_prime::{BigUint, super_prime};
-///     let start = BigUint::from(2usize);
-///     for n in super_prime(&start, 100).into_iter().rev() {
-///         println!("{}", n);
-///     }
+/// let start = BigUint::from(2usize);
+/// for n in super_prime(&start, 100).into_iter().rev() {
+///     println!("{}", n);
+/// }
 /// ```
 pub fn super_prime(start: &BigUint, iteration: usize) -> Vec<BigUint> {
     let seq = vec![start.clone()];
@@ -49,9 +63,7 @@ pub fn super_prime(start: &BigUint, iteration: usize) -> Vec<BigUint> {
     stack.push_back(seq);
     // dfs search, return first stack reached max length
     'outer: while let Some(old_seq) = stack.pop_back() {
-        let last = unsafe {
-            old_seq.last().unwrap_unchecked()
-        };
+        let last = unsafe { old_seq.last().unwrap_unchecked() };
         let old_len = last.to_string().len();
         for i in 0..old_len {
             for number in insert_digit(last, i, i != old_len) {
@@ -67,4 +79,3 @@ pub fn super_prime(start: &BigUint, iteration: usize) -> Vec<BigUint> {
     // nil means no such sequence
     stack.pop_back().unwrap_or_default()
 }
-
