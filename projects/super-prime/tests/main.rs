@@ -19,29 +19,48 @@ fn test2() {
     }
 }
 
+const LIMIT: usize = 300 - 1;
+
 #[test]
-fn test() -> std::io::Result<()> {
-    const LIMIT: usize = 200 - 1;
+fn find_prime2() -> std::io::Result<()> {
     let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").canonicalize()?;
-    let mut prime2 = File::create(here.join("prime2.py"))?;
-    let mut prime3 = File::create(here.join("prime3.py"))?;
-    let mut prime5 = File::create(here.join("prime5.py"))?;
-    let mut prime7 = File::create(here.join("prime7.py"))?;
+    let mut primes = File::create(here.join("prime2.py"))?;
     let start = BigUint::from(2usize);
     for n in super_prime(&start, LIMIT).into_iter() {
-        writeln!(prime2, "{}", n.to_string())?;
+        writeln!(primes, "{}", n.to_string())?;
     }
+    Ok(())
+}
+
+#[test]
+fn find_prime3() -> std::io::Result<()> {
+    let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").canonicalize()?;
+    let mut primes = File::create(here.join("prime3.py"))?;
     let start = BigUint::from(3usize);
     for n in super_prime(&start, LIMIT).into_iter() {
-        writeln!(prime3, "{}", n.to_string())?;
+        writeln!(primes, "{}", n.to_string())?;
     }
+    Ok(())
+}
+
+#[test]
+fn find_prime5() -> std::io::Result<()> {
+    let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").canonicalize()?;
+    let mut primes = File::create(here.join("prime5.py"))?;
     let start = BigUint::from(5usize);
     for n in super_prime(&start, LIMIT).into_iter() {
-        writeln!(prime5, "{}", n.to_string())?;
+        writeln!(primes, "{}", n.to_string())?;
     }
+    Ok(())
+}
+
+#[test]
+fn find_prime7() -> std::io::Result<()> {
+    let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").canonicalize()?;
+    let mut primes = File::create(here.join("prime7.py"))?;
     let start = BigUint::from(7usize);
     for n in super_prime(&start, LIMIT).into_iter() {
-        writeln!(prime7, "{}", n.to_string())?;
+        writeln!(primes, "{}", n.to_string())?;
     }
     Ok(())
 }
