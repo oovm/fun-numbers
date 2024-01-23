@@ -64,7 +64,7 @@ pub fn super_prime(start: &BigUint) -> impl Iterator<Item = SuperPrimeRecord> {
     let seq = vec![start.clone()];
     let mut stack = VecDeque::new();
     stack.push_back(seq);
-    // dfs search, return first stack reached max length
+    // pair search, return first stack reached max length
     from_generator(move || {
         while let Some(old_seq) = stack.pop_back() {
             let last = unsafe { old_seq.last().unwrap_unchecked() };

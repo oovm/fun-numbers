@@ -9,6 +9,8 @@ time-travel.*
 .idea/
 *.iml
 
+
 # Rust
 target/
 Cargo.lock
+output.tex
