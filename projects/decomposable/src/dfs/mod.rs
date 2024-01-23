@@ -1,90 +1,88 @@
-use crate::SuperPrimeRecord;
-use num::BigUint;
-use num_prime::nt_funcs::is_prime;
+use num::{BigUint, Zero};
 use std::{
-    collections::VecDeque,
-    iter::from_generator,
-    ops::{Div, Mul, Rem},
+    collections::BTreeMap,
+    fmt::{Display, Formatter},
 };
 
-/// Insert 0-9 to number at given position
-///
-/// # Examples
-///
-/// ```
-/// # use super_prime::{insert_digit, BigUint};
-/// let start = BigUint::from(13usize);
-/// for n in insert_digit(&start, 0, true) {
-///     println!("{}", n); // 131, 137, 139
-/// }
-/// for n in insert_digit(&start, 1, true) {
-///     println!("{}", n); // 103, 113, 167, 173, 193
-/// }
-/// for n in insert_digit(&start, 2, false) {
-///     println!("{}", n); // 113, 313, 613
-/// }
-/// ```
-pub fn insert_digit(n: &BigUint, position: usize, contains_zero: bool) -> impl Iterator<Item = BigUint> + '_ {
-    debug_assert!(position <= n.to_string().len(), "position {} of {} is out of range", position, n);
-    let start_index: u8 = if contains_zero { 0 } else { 1 };
-    let pow = BigUint::from(10usize).pow(position as u32);
-    let lhs = n.div(&pow).mul(&pow).mul(10usize);
-    let rhs = n.rem(&pow);
-    from_generator(move || {
-        for i in start_index..=9 {
-            let digit = BigUint::from(i).mul(&pow);
-            let new = digit + &lhs + &rhs;
-            if is_prime(&new, None).probably() {
-                yield new;
-            }
-        }
-    })
+#[derive(Debug)]
+pub struct Decomposable {
+    number: BigUint,
+    solutions: BTreeMap<BigUint, Vec<(BigUint, BigUint)>>,
 }
 
-/// A super prime is a prime number that, when any of its digits is deleted, the remaining number is still prime.
-///
-/// This function returns a sequence of super primes, starting from a given number, with a given length.
-///
-/// eg:
-/// - 1 -> 19 -> 199 -> 1999 -> 13999 -> ...
-/// - 2 -> 29 -> 269 -> 2969 -> 25969 -> ...
-///
-/// ## Examples
-///
-/// ```
-/// # use super_prime::{BigUint, super_prime};
-/// let start = BigUint::from(2usize);
-/// for n in super_prime(&start).into_iter().rev() {
-///     println!("{}", n);
-/// }
-/// ```
-pub fn super_prime(start: &BigUint) -> impl Iterator<Item = SuperPrimeRecord> {
-    let start_time = std::time::Instant::now();
-    let mut old_len = start.to_string().len();
-    let seq = vec![start.clone()];
-    let mut stack = VecDeque::new();
-    stack.push_back(seq);
-    // dfs search, return first stack reached max length
-    from_generator(move || {
-        while let Some(old_seq) = stack.pop_back() {
-            let last = unsafe { old_seq.last().unwrap_unchecked() };
-            let new_len = last.to_string().len();
-            for i in 0..old_len {
-                for number in insert_digit(last, i, i != old_len) {
-                    let mut new_seq = old_seq.clone();
-                    new_seq.push(number.clone());
-                    stack.push_back(new_seq);
+impl Decomposable {
+    /// Decompose a number into a set of factors.
+    /// Eg. &[2,6,5] -> {130: [(2, 65), (26, 5)]}
+    pub fn new(digits: &[u8]) -> Option<Decomposable> {
+        let number = build_number(digits);
+        let mut solutions = BTreeMap::new();
+        for i in 0..digits.len() {
+            let lhs = build_number(&digits[..i]);
+            let rhs = build_number(&digits[i..]);
+            solutions.entry(&lhs * &rhs).or_insert_with(Vec::new).push((lhs, rhs));
+        }
+        solutions.retain(|k, v| !k.is_zero() && v.len() > 1);
+        if solutions.is_empty() {
+            return None;
+        }
+        Some(Decomposable { number, solutions })
+    }
+    pub fn strict(&self) -> bool {
+        self.solutions.len() == 1
+    }
+}
+
+impl Display for Decomposable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (result, factors) in self.solutions.iter() {
+            write!(f, "{}", result)?;
+            for (index, (lhs, rhs)) in factors.iter().enumerate() {
+                if f.alternate() && index == 0 {
+                    write!(f, "&={}×{}", lhs, rhs)?;
+                }
+                else {
+                    write!(f, "={}×{}", lhs, rhs)?;
                 }
             }
-            if new_len > old_len {
-                yield SuperPrimeRecord {
-                    numbers: old_seq,
-                    digits: old_len,
-                    rest: stack.len(),
-                    time: start_time.elapsed().as_secs_f64(),
-                };
-                old_len = new_len;
+            f.write_str("\\\\\n")?;
+        }
+        Ok(())
+    }
+}
+
+fn build_number(digits: &[u8]) -> BigUint {
+    let mut number = BigUint::zero();
+    for digit in digits {
+        number = number * BigUint::from(10u32) + BigUint::from(*digit);
+    }
+    number
+}
+#[derive(Default)]
+pub struct DigitsGenerator {
+    digits: Vec<u8>,
+}
+
+impl<'i> Iterator for DigitsGenerator {
+    type Item = Vec<u8>;
+    // [] -> [0] -> [1] -> ... [9] -> [1,0] -> [1,1] -> ...
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.digits.is_empty() {
+            self.digits.push(0);
+            return Some(self.digits.clone());
+        }
+        let mut carry = true;
+        for digit in self.digits.iter_mut() {
+            if carry {
+                *digit += 1;
+                carry = *digit == 10;
+                if carry {
+                    *digit = 0;
+                }
             }
         }
-    })
+        if carry {
+            self.digits.push(1);
+        }
+        Some(self.digits.iter().cloned().rev().collect())
+    }
 }
